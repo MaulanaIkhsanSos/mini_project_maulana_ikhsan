@@ -1,8 +1,6 @@
 // comment_controller.go
 package controller
 
-import "yourapp/pkg/model"
-
 type CommentController struct {
 	CommentModel model.Comment
 }

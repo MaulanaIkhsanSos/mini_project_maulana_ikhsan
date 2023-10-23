@@ -1,7 +1,7 @@
 // feedback_controller.go
 package controller
 
-import "yourapp/pkg/model"
+import "motivation-app/pkg/model"
 
 type FeedbackController struct {
 	FeedbackModel model.Feedback

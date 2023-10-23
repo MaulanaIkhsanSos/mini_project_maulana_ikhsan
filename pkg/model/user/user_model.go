@@ -1,8 +1,6 @@
 // user_controller.go
 package controller
 
-import "yourapp/pkg/model"
-
 type UserController struct {
 	UserModel model.User
 }

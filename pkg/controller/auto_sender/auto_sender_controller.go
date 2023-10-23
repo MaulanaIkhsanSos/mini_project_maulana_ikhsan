@@ -1,5 +1,5 @@
 // automated_motivation_sender.go
-package model
+package model_test
 
 type AutomatedMotivationSender struct {
 	PengirimID        int

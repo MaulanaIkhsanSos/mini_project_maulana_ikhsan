@@ -1,7 +1,7 @@
 // motivation_sender_controller.go
 package controller
 
-import "yourapp/pkg/model"
+import "motivation-app/pkg/model"
 
 type MotivationSenderController struct {
 	SenderModel model.AutomatedMotivationSender
