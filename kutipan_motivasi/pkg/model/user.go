@@ -2,10 +2,10 @@ package model
 
 // User adalah entitas yang merepresentasikan pengguna dalam aplikasi.
 type User struct {
-	UserID       int
-	NamaPengguna string
-	Email        string
-	KataSandi    string
+	UserID       int    `json:"userID"`
+	NamaPengguna string `json:"namaPengguna"`
+	Email        string `json:"email"`
+	KataSandi    string `json:"kataSandi"`
 }
 
 // NewUser adalah fungsi untuk membuat pengguna baru.

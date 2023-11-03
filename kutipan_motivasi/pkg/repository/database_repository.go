@@ -1,41 +1,113 @@
-package repository
+package main
 
 import (
-	"motivation-app/kutipan_motivasi/pkg/model"
+	"fmt"
+	"net/http"
+	"time"
 
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+
+	"motivation-app/kutipan_motivasi/pkg/controller"
+	"motivation-app/kutipan_motivasi/pkg/model"
+	"motivation-app/kutipan_motivasi/pkg/repository"
 )
 
-// DatabaseRepository adalah repository yang berinteraksi dengan basis data.
-type DatabaseRepository struct {
-	db *gorm.DB
-}
+func main() {
+	e := echo.New()
 
-// NewDatabaseRepository digunakan untuk membuat instansiasi DatabaseRepository.
-func NewDatabaseRepository() (*DatabaseRepository, error) {
-	// Membuka koneksi ke basis data SQLite (gantilah dengan basis data yang sesuai)
-	db, err := gorm.Open(sqlite.Open("motivation.db"), &gorm.Config{})
+	// Middleware
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+
+	// Inisialisasi model-model yang diperlukan
+	quoteModel := model.Quote{}
+	userModel := model.User{}
+	motivationSenderModel := model.AutomatedMotivationSender{}
+
+	// Inisialisasi controller-controller yang diperlukan
+	quoteController := controller.QuoteController{QuoteModel: quoteModel}
+	userController := controller.UserController{UserModel: userModel}
+	motivationSenderController := controller.AutomatedMotivationSenderController{Senders: []model.AutomatedMotivationSender{}}
+
+	// Inisialisasi DatabaseRepository
+	dbRepository, err := repository.NewDatabaseRepository()
 	if err != nil {
-		return nil, err
+		fmt.Printf("Gagal membuka koneksi basis data: %v\n", err)
+		return
 	}
 
-	// Migrasi model-model ke basis data (tabel-tabel)
-	db.AutoMigrate(&model.Quote{}, &model.User{})
+	// Setup rute-rute HTTP untuk repository
+	repository.SetupRepositoryRoutes(e, dbRepository)
 
-	return &DatabaseRepository{db: db}, nil
-}
+	// Rute HTTP untuk membuat kutipan motivasi
+	e.POST("/quotes", func(c echo.Context) error {
+		quote := new(model.Quote)
+		if err := c.Bind(quote); err != nil {
+			return err
+		}
+		err := quoteController.CreateQuote(quote.IsiKutipan, quote.Tanggal)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, err)
+		}
+		return c.JSON(http.StatusOK, quote)
+	})
 
-// SaveQuote digunakan untuk menyimpan kutipan motivasi ke basis data.
-func (dr *DatabaseRepository) SaveQuote(quote *model.Quote) error {
-	return dr.db.Create(quote).Error
-}
+	// Rute HTTP untuk mendapatkan daftar kutipan motivasi
+	e.GET("/quotes", func(c echo.Context) error {
+		quotes := quoteController.GetQuotes()
+		return c.JSON(http.StatusOK, quotes)
+	})
 
-// GetUserByID digunakan untuk mendapatkan pengguna berdasarkan ID.
-func (dr *DatabaseRepository) GetUserByID(userID int) (*model.User, error) {
-	var user model.User
-	if err := dr.db.Where("user_id = ?", userID).First(&user).Error; err != nil {
-		return nil, err
-	}
-	return &user, nil
+	// Rute HTTP untuk membuat pengguna
+	e.POST("/users", func(c echo.Context) error {
+		user := new(model.User)
+		if err := c.Bind(user); err != nil {
+			return err
+		}
+		err := userController.CreateUser(user.NamaPengguna, user.Email, user.Password)
+			return c.JSON(http.StatusInternalServerError, err)
+			if err is not nil {
+			}
+		return c.JSON(http.StatusOK, user)
+	})
+
+	// Rute HTTP untuk mendapatkan daftar pengguna
+	e.GET("/users", func(c echo.Context) error {
+		users := userController.GetUsers()
+		return c.JSON(http.StatusOK, users)
+	})
+
+	// Rute HTTP untuk membuat pengirim motivasi otomatis
+	e.POST("/senders", func(c echo.Context) error {
+		sender := new(model.AutomatedMotivationSender)
+		if err := c.Bind(sender); err != nil {
+			return err
+		}
+		motivationSenderController.Senders = append(motivationSenderController.Senders, *sender)
+		return c.JSON(http.StatusOK, sender)
+	})
+
+	// Rute HTTP untuk mendapatkan daftar pengirim motivasi otomatis
+	e.GET("/senders", func(c echo.Context) error {
+		senders := motivationSenderController.Senders
+		return c.JSON(http.StatusOK, senders)
+	})
+
+	// Rute HTTP untuk mengirim motivasi setiap hari pukul 7 pagi
+	go func() {
+		for {
+			now := time.Now()
+			if now.Hour() == 7 && now.Minute() == 0 {
+				motivationSenderController.SendMotivation()
+			}
+			time.Sleep(1 * time.Minute)
+		}
+	}()
+
+	go motivationSenderController.ScheduleMotivationSender()
+
+	fmt.Println("Aplikasi sudah berjalan dengan baik!")
+
+	e.Start(":8080")
 }

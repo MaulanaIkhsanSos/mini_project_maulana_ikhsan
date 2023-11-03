@@ -2,9 +2,9 @@ package model
 
 // Quote adalah entitas yang merepresentasikan kutipan motivasi dalam aplikasi.
 type Quote struct {
-	KutipanID  int
-	IsiKutipan string
-	Tanggal    string
+	KutipanID  int    `json:"kutipanID"`
+	IsiKutipan string `json:"isiKutipan"`
+	Tanggal    string `json:"tanggal"`
 }
 
 // NewQuote adalah fungsi untuk membuat kutipan motivasi baru.
