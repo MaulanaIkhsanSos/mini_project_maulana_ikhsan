@@ -66,9 +66,9 @@ func main() {
 			return err
 		}
 		err := userController.CreateUser(user.NamaPengguna, user.Email, user.Password)
-			return c.JSON(http.StatusInternalServerError, err)
-			if err is not nil {
-			}
+		return c.JSON(http.StatusInternalServerError, err)
+		if err != nil {
+		}
 		return c.JSON(http.StatusOK, user)
 	})
 
